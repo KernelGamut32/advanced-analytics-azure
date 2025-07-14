@@ -8,34 +8,20 @@ Install-Module -Name Az.Synapse -Force
 $sqlUser = "sqladminuser"
 write-host ""
 $sqlPassword = ""
-$complexPassword = 0
 
-while ($complexPassword -ne 1)
-{
-    $SqlPassword = Read-Host "Enter the password to use for the $sqlUser login.
-    `The password must meet complexity requirements:
-    ` - Minimum 8 characters. 
-    ` - At least one upper case English letter [A-Z]
-    ` - At least one lower case English letter [a-z]
-    ` - At least one digit [0-9]
-    ` - At least one special character (!,@,#,%,^,&,$)
-    ` "
-
-    if(($SqlPassword -cmatch '[a-z]') -and ($SqlPassword -cmatch '[A-Z]') -and ($SqlPassword -match '\d') -and ($SqlPassword.length -ge 8) -and ($SqlPassword -match '!|@|#|%|^|&|$'))
-    {
-        $complexPassword = 1
-	    Write-Output "Password $SqlPassword accepted. Make sure you remember this!"
-    }
-    else
-    {
-        Write-Output "$SqlPassword does not meet the complexity requirements."
-    }
-}
+$SqlPassword = Read-Host "Enter the password to use for the $sqlUser login"
 
 $Region = Read-Host "Enter the region where your Synapse workspace is hosted (e.g., East US 2)"
 $synapseWorkspace = Read-Host "Enter Synapse workspace name"
 $dataLakeAccountName = Read-Host "Enter Data Lake account name"
 $sqlDatabaseName = Read-Host "Enter dedicated SQL pool name"
+
+# Create database
+write-host "Creating the $sqlDatabaseName database..."
+$setupSQL = Get-Content -Path "setup.sql" -Raw
+$setupSQL = $setupSQL.Replace("datalakexxxxxxx", $dataLakeAccountName)
+Set-Content -Path "setup$suffix.sql" -Value $setupSQL
+sqlcmd -S "$synapseWorkspace.sql.azuresynapse.net" -U $sqlUser -P $sqlPassword -d $sqlDatabaseName -I -i setup$suffix.sql
 
 # Load data
 write-host "Loading data..."

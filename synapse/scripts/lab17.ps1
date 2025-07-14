@@ -13,6 +13,10 @@ $dataLakeAccountName = Read-Host "Enter Data Lake account name"
 write-host "Uploading files..."
 $storageAccount = Get-AzStorageAccount -ResourceGroupName $resourceGroupName -Name $dataLakeAccountName
 $storageContext = $storageAccount.Context
+$container = Get-AzStorageContainer -Context $storageContext -Name 'files' -ErrorAction SilentlyContinue
+if (-not $container) {
+    New-AzStorageContainer -Name "files" -Context $storageContext -Permission Off
+}
 Get-ChildItem "./data/*.csv" -File | Foreach-Object {
     write-host ""
     $file = $_.Name

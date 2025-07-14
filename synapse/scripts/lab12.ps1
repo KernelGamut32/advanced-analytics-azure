@@ -13,29 +13,8 @@ az extension add -n ml -y
 $sqlUser = "sqladminuser"
 write-host ""
 $sqlPassword = ""
-$complexPassword = 0
 
-while ($complexPassword -ne 1)
-{
-    $SqlPassword = Read-Host "Enter the password to use for the $sqlUser login.
-    `The password must meet complexity requirements:
-    ` - Minimum 8 characters. 
-    ` - At least one upper case English letter [A-Z]
-    ` - At least one lower case English letter [a-z]
-    ` - At least one digit [0-9]
-    ` - At least one special character (!,@,#,%,^,&,$)
-    ` "
-
-    if(($SqlPassword -cmatch '[a-z]') -and ($SqlPassword -cmatch '[A-Z]') -and ($SqlPassword -match '\d') -and ($SqlPassword.length -ge 8) -and ($SqlPassword -match '!|@|#|%|^|&|$'))
-    {
-        $complexPassword = 1
-	    Write-Output "Password $SqlPassword accepted. Make sure you remember this!"
-    }
-    else
-    {
-        Write-Output "$SqlPassword does not meet the complexity requirements."
-    }
-}
+$SqlPassword = Read-Host "Enter the password to use for the $sqlUser login"
 
 # Generate unique random suffix
 [string]$suffix =  -join ((48..57) + (97..122) | Get-Random -Count 7 | % {[char]$_})
@@ -51,6 +30,10 @@ $sqlDatabaseName = Read-Host "Enter dedicated SQL pool name"
 write-host "Uploading files..."
 $storageAccount = Get-AzStorageAccount -ResourceGroupName $resourceGroupName -Name $dataLakeAccountName
 $storageContext = $storageAccount.Context
+$container = Get-AzStorageContainer -Context $storageContext -Name 'files' -ErrorAction SilentlyContinue
+if (-not $container) {
+    New-AzStorageContainer -Name "files" -Context $storageContext -Permission Off
+}
 Get-ChildItem "./files/*.csv" -File | Foreach-Object {
     write-host ""
     $file = $_.Name

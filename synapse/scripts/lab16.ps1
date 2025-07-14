@@ -8,29 +8,8 @@ Install-Module -Name Az.Synapse -Force
 $sqlUser = "sqladminuser"
 write-host ""
 $sqlPassword = ""
-$complexPassword = 0
 
-while ($complexPassword -ne 1)
-{
-    $SqlPassword = Read-Host "Enter the password to use for the $sqlUser login.
-    `The password must meet complexity requirements:
-    ` - Minimum 8 characters. 
-    ` - At least one upper case English letter [A-Z]
-    ` - At least one lower case English letter [a-z]
-    ` - At least one digit [0-9]
-    ` - At least one special character (!,@,#,%,^,&,$)
-    ` "
-
-    if(($SqlPassword -cmatch '[a-z]') -and ($SqlPassword -cmatch '[A-Z]') -and ($SqlPassword -match '\d') -and ($SqlPassword.length -ge 8) -and ($SqlPassword -match '!|@|#|%|^|&|$'))
-    {
-        $complexPassword = 1
-	    Write-Output "Password $SqlPassword accepted. Make sure you remember this!"
-    }
-    else
-    {
-        Write-Output "$SqlPassword does not meet the complexity requirements."
-    }
-}
+$SqlPassword = Read-Host "Enter the password to use for the $sqlUser login"
 
 $Region = Read-Host "Enter the region where your Synapse workspace is hosted (e.g., East US 2)"
 $resourceGroupName = Read-Host "Enter the resource group name where your Synapse workspace is located"
@@ -56,6 +35,10 @@ Get-ChildItem "./data/*.txt" -File | Foreach-Object {
 write-host "Uploading files..."
 $storageAccount = Get-AzStorageAccount -ResourceGroupName $resourceGroupName -Name $dataLakeAccountName
 $storageContext = $storageAccount.Context
+$container = Get-AzStorageContainer -Context $storageContext -Name 'files' -ErrorAction SilentlyContinue
+if (-not $container) {
+    New-AzStorageContainer -Name "files" -Context $storageContext -Permission Off
+}
 Get-ChildItem "./data/*.csv" -File | Foreach-Object {
     write-host ""
     $file = $_.Name
